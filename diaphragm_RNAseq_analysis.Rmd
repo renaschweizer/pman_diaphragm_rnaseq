@@ -461,10 +461,17 @@ anova_results <- data.frame(module=c("blue/M1","turquoise/M2","brown/M3","yellow
 
 write.table(anova_results,file = paste("wgcna_output_files/table_wgcna_anova_results_",run_date,".txt",sep=""), quote=FALSE,sep="\t",row.names=FALSE)
 
-emmeans(model_turq, list(pairwise ~ Treatment), adjust = "tukey")
-emmeans(model_blue, list(pairwise ~ Treatment), adjust = "tukey")
-emmeans(model_yell, list(pairwise ~ Treatment), adjust = "tukey")
-emmeans(model_brown, list(pairwise ~ Treatment), adjust = "tukey")
+model_turq_emm <- emmeans(model_turq, pairwise ~ Treatment, adjust = "tukey") # M2
+eff_size(model_turq_emm, sigma=sigma(model_turq),edf=27)
+
+model_blue_emm <-emmeans(model_blue, pairwise ~ Treatment, adjust = "tukey") # M1
+eff_size(model_blue_emm, sigma=sigma(model_blue),edf=27)
+
+model_yell_emm <-emmeans(model_yell, pairwise ~ Treatment, adjust = "tukey") # M4
+eff_size(model_yell_emm, sigma=sigma(model_yell),edf=27)
+
+model_brown_emm <-emmeans(model_brown, pairwise ~ Treatment, adjust = "tukey") # M3
+eff_size(model_brown_emm, sigma=sigma(model_brown),edf=27)
 
 #match(rownames(Expr), id$Code)
 setSamples = rownames(Expr)
@@ -776,6 +783,8 @@ colnames(tmp2) <- c("Gene","logFC.lifeLong","logFC.adult")
 intersect_FC <- merge(tmp2,sig.postNatal.fdr[,c("Gene","logFC")],by="Gene")
 colnames(intersect_FC) <- c("Gene","logFC.lifeLong","logFC.adult","logFC.postNatal")
 
+write.table(intersect_FC, file=paste("edgeR_output_files/intersectGenes_FC_",run_date,".txt",sep=""), quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE)
+
 # make pairwise logFC plots of 207 3-way genes
 
 pdf(file=paste("edgeR_output_files/intersectGenes_FC_lifeLongvPostNatal_",run_date,".pdf",sep=""))
@@ -1017,7 +1026,42 @@ write.csv(apply(adult_genes_GO$result,2,as.character),file=paste("edgeR_output_f
 
 ```
 
-Our final aim in this study is to identify which differentially-expressed genes (from WGCNA and edgeR) overlap w/candidate selection scan genes. 
+We are also interested in which genes that are differentially-expressed from edgeR analysis intersect with modules from WGCNA. WGCNA modules are non-overlapping, so we will examine overlap of M1, M2, M3, M4 each with the DE gene sets. 
+
+```{r intersect DE genes with WGCNA}
+
+# intersect w/M1(blue)  
+  genes <- geneInfo[geneInfo$moduleColor=="blue",]["Gene"]
+  listInput <- list(LifeLongHypoxia = rownames(sig.lifeLong.fdr), PostNatalHypoxia = rownames(sig.postNatal.fdr), AdultHypoxia = rownames(sig.adult.fdr),WGCNA_M1 = genes$Gene)
+  pdf(paste("edgeR_output_files/Intersection_of_DE_Genes_wWGCNA_M1_",run_date,".pdf",sep=""),w=8,h=6)
+  upset(fromList(listInput), order.by = "freq", mainbar.y.label="Gene Intersections", sets.x.label = "DE Genes Comparison w/WGCNA Module", sets.bar.color = "#56B4E9")
+  dev.off()
+
+# intersect w/M2 (turquoise)
+  genes <- geneInfo[geneInfo$moduleColor=="turquoise",]["Gene"]
+  listInput <- list(LifeLongHypoxia = rownames(sig.lifeLong.fdr), PostNatalHypoxia = rownames(sig.postNatal.fdr), AdultHypoxia = rownames(sig.adult.fdr),WGCNA_M2 = genes$Gene)
+  pdf(paste("edgeR_output_files/Intersection_of_DE_Genes_wWGCNA_M2_",run_date,".pdf",sep=""),w=8,h=6)
+  upset(fromList(listInput), order.by = "freq", mainbar.y.label="Gene Intersections", sets.x.label = "DE Genes Comparison w/WGCNA Module", sets.bar.color = "#56B4E9")
+  dev.off()
+  
+# intersect w/M3 (brown)
+  genes <- geneInfo[geneInfo$moduleColor=="brown",]["Gene"]
+  listInput <- list(LifeLongHypoxia = rownames(sig.lifeLong.fdr), PostNatalHypoxia = rownames(sig.postNatal.fdr), AdultHypoxia = rownames(sig.adult.fdr),WGCNA_M3 = genes$Gene)
+  pdf(paste("edgeR_output_files/Intersection_of_DE_Genes_wWGCNA_M3_",run_date,".pdf",sep=""),w=8,h=6)
+  upset(fromList(listInput), order.by = "freq", mainbar.y.label="Gene Intersections", sets.x.label = "DE Genes Comparison w/WGCNA Module", sets.bar.color = "#56B4E9")
+  dev.off()
+
+# intersect w/M4 (yellow)
+  genes <- geneInfo[geneInfo$moduleColor=="yellow",]["Gene"]
+  listInput <- list(LifeLongHypoxia = rownames(sig.lifeLong.fdr), PostNatalHypoxia = rownames(sig.postNatal.fdr), AdultHypoxia = rownames(sig.adult.fdr),WGCNA_M4 = genes$Gene)
+  pdf(paste("edgeR_output_files/Intersection_of_DE_Genes_wWGCNA_M4_",run_date,".pdf",sep=""),w=8,h=6)
+  upset(fromList(listInput), order.by = "freq", mainbar.y.label="Gene Intersections", sets.x.label = "DE Genes Comparison w/WGCNA Module", sets.bar.color = "#56B4E9")
+  dev.off()
+  
+    
+```
+
+Our final aim in this study is to identify which differentially-expressed genes/gene sets (from WGCNA and edgeR) overlap w/candidate selection scan genes, and whether the overlap is a significant enrichment.  
 
 ```{r overlap_w_selection_scan}
 
@@ -1101,14 +1145,27 @@ print(length(intersect(only_dev.mus$only_dev, sel_genes_mus$gene_pman_ensembl)))
 selected_dev_genes <- merge(only_dev.mus, sel_genes_mus,by.x="only_dev",by.y="gene_pman_ensembl")
 write.csv(selected_dev_genes,file=paste("selection_overlap_output_files/only_dev_genes_selCandidates_",run_date,".csv",sep=""))
 
-# get expression CPM values 
-sel_dev_genes_cpm <- as.data.frame(t(diaphragm.norm[unique(selected_dev_genes$only_dev),]))
-treatments <- c(rep("4.AH",8),rep("2.LH",8),rep("1.C",10),rep("3.PNH",9))
-sel_dev_genes_cpm$treatment <- treatments
+## Is that an enrichment? 
 
-ggplot(sel_dev_genes_cpm, aes(x=treatment, y=ENSPEMG00000025708)) + ggtitle("ENSPEMG00000025708") + 
-  geom_boxplot() + geom_dotplot(binaxis='y', stackdir='center',
-  position=position_dodge(1), dotsize = 0.2)+ ylab("Relative gene expression (log 2 counts per million))")
+dat_dev <- data.frame(
+     "selected_yes" = c(16, 1836),
+     "selected_no" = c(193, 13630),
+     row.names = c("dev DE", "Non-dev DE"),
+     stringsAsFactors = FALSE
+ )
+colnames(dat_dev) <- c("Selected", "Not-selected")
+dat_dev
+fisher.test(dat_dev)
+
+
+# get expression CPM values 
+#sel_dev_genes_cpm <- as.data.frame(t(diaphragm.norm[unique(selected_dev_genes$only_dev),]))
+#treatments <- c(rep("4.AH",8),rep("2.LH",8),rep("1.C",10),rep("3.PNH",9))
+#sel_dev_genes_cpm$treatment <- treatments
+
+#ggplot(sel_dev_genes_cpm, aes(x=treatment, y=ENSPEMG00000025708)) + ggtitle("ENSPEMG00000025708") + 
+#  geom_boxplot() + geom_dotplot(binaxis='y', stackdir='center',
+#  position=position_dodge(1), dotsize = 0.2)+ ylab("Relative gene expression (log 2 counts per million))")
 
 
 # How many genes overlap with the 3-way intersection set of 207?
@@ -1116,17 +1173,101 @@ print(length(intersect(sig.intersect.fdr.mus$Gene, sel_genes_mus$gene_pman_ensem
 selected_threeWay_genes <- merge(sig.intersect.fdr.mus, sel_genes_mus,by.x="Gene",by.y="gene_pman_ensembl")
 write.csv(selected_threeWay_genes,file=paste("selection_overlap_output_files/threeWay_genes_selCandidates_",run_date,".csv",sep=""))
 
+## Is that an enrichment? 
+
+dat_3way <- data.frame(
+     "selected_yes" = c(23, 1829),
+     "selected_no" = c(184, 13639),
+     row.names = c("3way DE", "Non-3way DE"),
+     stringsAsFactors = FALSE
+ )
+colnames(dat_3way) <- c("Selected", "Not-selected")
+dat_3way
+fisher.test(dat_3way)
+
+# How many genes are in EdgeR DE gene sets and also in PBS? Is that an enrichment? 
+# 1852 pman genes expressed and in PBS 99.9th
+
+# LH DE genes 
+dim(sig.lifeLong.fdr)[1] #value of significant fdr genes
+print(length(intersect(sig.lifeLong.fdr$Gene, sel_genes_mus$gene_pman_ensembl)))
+
+dat_LH <- data.frame(
+     "selected_yes" = c(27, 1825),
+     "selected_no" = c(195, 13628),
+     row.names = c("LH DE", "Non-LH DE"),
+     stringsAsFactors = FALSE
+ )
+colnames(dat_LH) <- c("Selected", "Not-selected")
+dat_LH
+fisher.test(dat_LH)
+
+# not enriched so no GO but output list of genes
+tmp_mus <- merge(sig.lifeLong.fdr,sel_genes_mus, by.x="Gene", by.y="gene_pman_ensembl")
+write.csv(tmp_mus[!duplicated(tmp_mus[c('Gene')]), ],file=paste("selection_overlap_output_files/DE_lifelongHypoxia_selOverlap_genes",run_date,".csv",sep=""))
+
+# AH DE genes 
+dim(sig.adult.fdr)[1] #value of significant fdr genes
+print(length(intersect(sig.adult.fdr$Gene, sel_genes_mus$gene_pman_ensembl)))
+
+dat_AH <- data.frame(
+     "selected_yes" = c(660, 5749),
+     "selected_no" = c(1192, 8074),
+     row.names = c("AH DE", "Non-AH DE"),
+     stringsAsFactors = FALSE
+ )
+colnames(dat_AH) <- c("Selected", "Not-selected")
+dat_AH
+fisher.test(dat_AH)
+
+# sig enrichment, so run GO analysis
+tmp_mus <- merge(sig.adult.fdr,sel_genes_mus, by.x="Gene", by.y="gene_pman_ensembl")
+tmp_mus_GO <- gost(as.vector(tmp_mus $Mouse.gene.stable.ID), organism = "mmusculus",
+                              ordered_query = F, significant = T, exclude_iea = F,
+                              user_threshold=0.05,
+                              correction_method = "g_SCS", custom_bg = as.vector(all_genes_mus$Mouse.gene.stable.ID),
+                              domain_scope = "annotated", numeric_ns = "",sources=c("GO","KEGG","REAC","TF","HP"))
+  #write go table
+  write.csv(apply(tmp_mus_GO$result,2,as.character),file=paste("selection_overlap_output_files/DE_adultHypoxia_selOverlap_GO",run_date,".csv",sep=""))
+  write.csv(tmp_mus[!duplicated(tmp_mus[c('Gene')]), ],file=paste("selection_overlap_output_files/DE_adultHypoxia_selOverlap_genes",run_date,".csv",sep=""))
+
+# PNH DE genes 
+dim(sig.postNatal.fdr)[1] #value of significant fdr genes
+print(length(intersect(sig.postNatal.fdr$Gene, sel_genes_mus$gene_pman_ensembl)))
+
+dat_PNH <- data.frame(
+     "selected_yes" = c(275, 2644),
+     "selected_no" = c(1577, 11179),
+     row.names = c("PNH DE", "Non-PNH DE"),
+     stringsAsFactors = FALSE
+ )
+colnames(dat_PNH) <- c("Selected", "Not-selected")
+dat_PNH
+fisher.test(dat_PNH)
+
+# sig enrichment so run GO analysis
+
+tmp_mus <- merge(sig.postNatal.fdr,sel_genes_mus, by.x="Gene", by.y="gene_pman_ensembl")
+tmp_mus_GO <- gost(as.vector(tmp_mus $Mouse.gene.stable.ID), organism = "mmusculus",
+                              ordered_query = F, significant = T, exclude_iea = F,
+                              user_threshold=0.05,
+                              correction_method = "g_SCS", custom_bg = as.vector(all_genes_mus$Mouse.gene.stable.ID),
+                              domain_scope = "annotated", numeric_ns = "",sources=c("GO","KEGG","REAC","TF","HP"))
+  #write go table
+  write.csv(apply(tmp_mus_GO$result,2,as.character),file=paste("selection_overlap_output_files/DE_postNatalHypoxia_selOverlap_GO",run_date,".csv",sep=""))
+  write.csv(tmp_mus[!duplicated(tmp_mus[c('Gene')]), ],file=paste("selection_overlap_output_files/DE_postNatalHypoxia_selOverlap_genes",run_date,".csv",sep=""))
+
+
+# What is the proportion of the identified candidates for high-altitude adaptation represented in the DEGs and genes-modules?
+  
+sel_modules_tmp <- as.data.frame(unique(geneInfo[(geneInfo$moduleColor!="grey" & geneInfo$moduleColor!="green"),1]))
+colnames(sel_modules_tmp) <- c("Gene")
+
+length(unique(intersect(sel_genes_mus$gene_pman_ensembl,sel_modules_tmp$Gene)))  # 1282 out of 1435
+
+
+
 ```
 
 
 sessionInfo()
-
-
-
-
-
-
-
-
-
-
