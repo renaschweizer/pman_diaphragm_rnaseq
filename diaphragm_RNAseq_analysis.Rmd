@@ -69,6 +69,14 @@ anova(lm_gc)
 anova(lm_align)
 anova(lm_assign)
 
+# remove 4 samples and calculate averages for metrics
+
+metrics_mod <- metrics[metrics$Sample_Name!=c("AH1"),]
+metrics_mod <- metrics_mod[metrics_mod$Sample_Name!=c("AH2"),]
+metrics_mod <- metrics_mod[metrics_mod$Sample_Name!=c("N1"),]
+metrics_mod <- metrics_mod[metrics_mod$Sample_Name!=c("N2"),]
+
+
 set.seed(42)
   library(qwraps2)
 # define the markup language we are working in.
