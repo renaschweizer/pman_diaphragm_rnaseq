@@ -1,5 +1,5 @@
 # pman_diaphragm_rnaseq
-This repository is for data processing and analysis related to Schweizer et al. ([In Revision](https://doi.org/10.1101/2022.09.24.509328)), "Gene regulatory changes underlie developmental plasticity in respiration and aerobic performance in highland deer mice" with Catherine M. Ivy, Chandrasekhar Natarajan, Graham R. Scott, Jay F. Storz, and Zachary A. Cheviron. 
+This repository is for data processing and analysis related to Schweizer et al. ([2023](https://onlinelibrary.wiley.com/doi/full/10.1111/mec.16953)), "Gene regulatory changes underlie developmental plasticity in respiration and aerobic performance in highland deer mice" with Catherine M. Ivy, Chandrasekhar Natarajan, Graham R. Scott, Jay F. Storz, and Zachary A. Cheviron. 
 
 Below, users will find example commands for analyzing raw RNAseq fastq data to generate count data. In the .Rmarkdown file, users will find all the analyses to perform gene expression analyses in R, including differential gene expression analysis with EdgeR, identifying regulatory modules in WGCNA, testing for correlations of WGCNA modules with phenotypes, testing for effects of treatment on module expression, and identifying overap with candidate genes for high-altitude adaptation. There is also an R script for plotting output and results from REVIGO analysis. 
 
